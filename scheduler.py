@@ -1,6 +1,6 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from history import get_historyprint(df.tail())
+from history import get_history
 from analysis.signal import generate_signal
 from telegram import send_message
 
@@ -16,20 +16,28 @@ last_alerts = {}
 
 def scan_symbol(symbol):
 
+    print(f"🔍 Scanning {symbol}")
+
     df = get_history(symbol=symbol)
 
     if df.empty:
-        print(f"{symbol} : No Data")
+        print(f"❌ {symbol} : No Data")
         return
+
+    print(df.tail())
 
     result = generate_signal(df)
 
     signal = result["signal"]
 
+    print(f"Signal = {signal}")
+
     if signal == "WAIT":
+        print(f"{symbol} WAIT")
         return
 
     if last_alerts.get(symbol) == signal:
+        print(f"{symbol} Duplicate Alert")
         return
 
     last_alerts[symbol] = signal
@@ -49,21 +57,33 @@ def scan_symbol(symbol):
 
 📈 Trend : {result['trend']}
 
+📉 RSI : {result['rsi']}
+
+📊 ADX : {result['adx']}
+
+📊 ATR : {result['atr']}
+
 Reasons
 
 {chr(10).join('✅ ' + r for r in result['reasons'])}
 """
 
-    send_message(message)
+    ok = send_message(message)
 
-    print(f"{symbol} Alert Sent")
+    if ok:
+        print(f"✅ {symbol} Alert Sent")
+    else:
+        print(f"❌ Telegram Failed")
 
 
 def market_scan():
 
-    for symbol in SYMBOLS:
+    print("🔄 Market Scan Started")
 
-        print(f"Scanning {symbol}")scan_symbol(symbol)
+    for symbol in SYMBOLS:
+        scan_symbol(symbol)
+
+    print("✅ Market Scan Finished")
 
 
 def start_scheduler():
@@ -72,11 +92,12 @@ def start_scheduler():
         market_scan,
         "interval",
         minutes=5,
-        max_instances=1
+        max_instances=1,
+        coalesce=True
     )
 
     scheduler.start()
 
     print("🚀 Scheduler Started")
 
-   print("🔄 Market Scan Started") market_scan()
+    market_scan()
