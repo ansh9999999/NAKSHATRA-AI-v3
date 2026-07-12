@@ -21,9 +21,7 @@ def get_history(symbol="BTCUSD", resolution="5m", limit=200):
 
     now = int(time.time())
 
-    # Last completed candle
     end = now - (now % candle_seconds)
-
     start = end - (limit * candle_seconds)
 
     url = f"{BASE_URL}/history/candles"
@@ -39,16 +37,31 @@ def get_history(symbol="BTCUSD", resolution="5m", limit=200):
 
         r = requests.get(url, params=params, timeout=15)
 
+        print("=" * 60)
+        print("STATUS :", r.status_code)
+        print("URL :", r.url)
+
         data = r.json()
 
-        if not data.get("success"):
-            print(data)
+        print("RESPONSE :")
+        print(data)
+        print("=" * 60)
+
+        if r.status_code != 200:
+            return pd.DataFrame()
+
+        if "result" not in data:
+            print("No result key found")
             return pd.DataFrame()
 
         df = pd.DataFrame(data["result"])
 
         if df.empty:
+            print("Empty DataFrame")
             return df
+
+        print("Columns :", df.columns.tolist())
+        print(df.tail())
 
         numeric = [
             "open",
@@ -59,24 +72,19 @@ def get_history(symbol="BTCUSD", resolution="5m", limit=200):
         ]
 
         for col in numeric:
-            df[col] = df[col].astype(float)
+            if col in df.columns:
+                df[col] = df[col].astype(float)
 
-        df["time"] = pd.to_datetime(
-            df["time"],
-            unit="s"
-        )
+        if "time" in df.columns:
+            df["time"] = pd.to_datetime(df["time"], unit="s")
 
         df = df.sort_values("time")
-
-        df.reset_index(
-            drop=True,
-            inplace=True
-        )
+        df.reset_index(drop=True, inplace=True)
 
         return df
 
     except Exception as e:
 
-        print("History Error:", e)
+        print("History Error :", e)
 
         return pd.DataFrame()
