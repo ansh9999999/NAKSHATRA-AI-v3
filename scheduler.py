@@ -1,6 +1,6 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from history import get_history
+from history import get_historyprint(df.tail())
 from analysis.signal import generate_signal
 from telegram import send_message
 
@@ -63,7 +63,7 @@ def market_scan():
 
     for symbol in SYMBOLS:
 
-        scan_symbol(symbol)
+        print(f"Scanning {symbol}")scan_symbol(symbol)
 
 
 def start_scheduler():
@@ -79,4 +79,4 @@ def start_scheduler():
 
     print("🚀 Scheduler Started")
 
-    market_scan()
+   print("🔄 Market Scan Started") market_scan()
