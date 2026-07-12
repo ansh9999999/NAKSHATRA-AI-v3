@@ -3,73 +3,67 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from history import get_history
 from analysis.signal import generate_signal
 from telegram import send_message
-from config import DEFAULT_SYMBOL
+
+SYMBOLS = [
+    "BTCUSD",
+    "ETHUSD"
+]
 
 scheduler = BackgroundScheduler()
 
-last_signal = None
+last_alerts = {}
+
+
+def scan_symbol(symbol):
+
+    df = get_history(symbol=symbol)
+
+    if df.empty:
+        print(f"{symbol} : No Data")
+        return
+
+    result = generate_signal(df)
+
+    signal = result["signal"]
+
+    if signal == "WAIT":
+        return
+
+    if last_alerts.get(symbol) == signal:
+        return
+
+    last_alerts[symbol] = signal
+
+    emoji = "🟢" if signal == "BIG BUY" else "🔴"
+
+    message = f"""
+🚨 NAKSHATRA AI v3
+
+{emoji} {signal}
+
+📊 Symbol : {symbol}
+
+💰 Price : {result['price']}
+
+🔥 Confidence : {result['confidence']}%
+
+📈 Trend : {result['trend']}
+
+Reasons
+
+{chr(10).join('✅ ' + r for r in result['reasons'])}
+"""
+
+    send_message(message)
+
+    print(f"{symbol} Alert Sent")
 
 
 def market_scan():
 
-    global last_signal
+    for symbol in SYMBOLS:
 
-    try:
-
-        df = get_history(
-            symbol=DEFAULT_SYMBOL,
-            resolution="5m"
-        )
-
-        if df.empty:
-            print("No Market Data")
-            return
-
-        signal = generate_signal(df)
-
-        current = signal["signal"]
-
-        if current == "WAIT":
-            return
-
-        if current == last_signal:
-            return
-
-        last_signal = current
-
-        emoji = "🟢" if current == "BIG BUY" else "🔴"
-
-        message = f"""
-🚨 NAKSHATRA AI v3
-
-{emoji} {current}
-
-📊 Symbol : {DEFAULT_SYMBOL}
-
-💰 Price : {signal['price']}
-
-🔥 Confidence : {signal['confidence']}%
-
-📈 Trend : {signal['trend']}
-
-📉 RSI : {signal['rsi']}
-
-📊 ADX : {signal['adx']}
-
-📊 ATR : {signal['atr']}
-
-Reasons
-
-- {'\n- '.join(signal['reasons'])}
-"""
-
-        send_message(message)
-
-        print("Alert Sent")
-
-    except Exception as e:
-
-        print(e)
+        scan_symbol(symbol)
 
 
 def start_scheduler():
@@ -83,6 +77,6 @@ def start_scheduler():
 
     scheduler.start()
 
-    print("Scheduler Started")
+    print("🚀 Scheduler Started")
 
     market_scan()
