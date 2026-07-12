@@ -16,40 +16,33 @@ def generate_signal(df):
     score = 0
     reasons = []
 
-    # =====================
     # EMA
-    # =====================
-
     ema9 = ema(df, 9).iloc[-1]
     ema21 = ema(df, 21).iloc[-1]
 
     bullish = ema9 > ema21
+    bearish = ema9 < ema21
 
     if bullish:
         score += 20
         reasons.append("EMA Bullish")
-    else:
+
+    if bearish:
         score -= 20
         reasons.append("EMA Bearish")
 
-    # =====================
     # RSI
-    # =====================
-
     rsi14 = rsi(df).iloc[-1]
 
-    if bullish and rsi14 > 55:
+    if bullish and 58 <= rsi14 <= 72:
         score += 15
-        reasons.append("RSI Strong")
+        reasons.append("Healthy RSI")
 
-    elif (not bullish) and rsi14 < 45:
+    elif bearish and 28 <= rsi14 <= 42:
         score -= 15
-        reasons.append("RSI Weak")
+        reasons.append("Weak RSI")
 
-    # =====================
     # MACD
-    # =====================
-
     macd_line, signal_line, hist = macd(df)
 
     if macd_line.iloc[-1] > signal_line.iloc[-1]:
@@ -60,90 +53,73 @@ def generate_signal(df):
         score -= 15
         reasons.append("MACD Bearish")
 
-    # =====================
     # ADX
-    # =====================
-
     adx14 = adx(df).iloc[-1]
 
     if adx14 > 25:
-        score += 10
+        if bullish:
+            score += 10
+        elif bearish:
+            score -= 10
+
         reasons.append("Strong Trend")
 
-    # =====================
     # ATR
-    # =====================
-
     atr14 = atr(df).iloc[-1]
 
-    if atr14 > atr(df).tail(20).mean():
-        score += 10
+    atr_avg = atr(df).tail(20).mean()
+
+    if atr14 > atr_avg:
+        if bullish:
+            score += 10
+        elif bearish:
+            score -= 10
+
         reasons.append("ATR Expansion")
 
-    # =====================
-    # Volume Spike
-    # =====================
-
+    # Volume
     if volume_spike(df).iloc[-1]:
-        score += 10
+        if bullish:
+            score += 15
+        elif bearish:
+            score -= 15
+
         reasons.append("Volume Spike")
 
-    # =====================
-    # BREAKOUT
-    # =====================
-
+    # Breakout
     high20 = df["high"].tail(20).max()
-
     low20 = df["low"].tail(20).min()
 
     if bullish and price >= high20:
-        score += 10
+        score += 15
         reasons.append("Resistance Breakout")
 
-    if (not bullish) and price <= low20:
-        score -= 10
+    if bearish and price <= low20:
+        score -= 15
         reasons.append("Support Breakdown")
 
-    # =====================
-    # SIGNAL
-    # =====================
-
-    if score >= 90:
-
+    # Final Signal
+    if score >= 60:
         signal = "BIG BUY"
 
-    elif score <= -90:
-
+    elif score <= -60:
         signal = "BIG SELL"
 
     else:
-
         signal = "WAIT"
 
     confidence = min(abs(score), 100)
 
     return {
-
         "signal": signal,
-
         "confidence": confidence,
-
         "score": score,
-
         "price": round(price, 2),
-
         "trend": trend_strength(df),
-
         "ema9": round(float(ema9), 2),
-
         "ema21": round(float(ema21), 2),
-
         "rsi": round(float(rsi14), 2),
-
         "adx": round(float(adx14), 2),
-
         "atr": round(float(atr14), 2),
-
-        "reasons": reasons
-
+        "reasons": reasons,
     }
