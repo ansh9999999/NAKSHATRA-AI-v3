@@ -49,3 +49,48 @@ def atr(df, period=14):
     ).max(axis=1)
 
     return tr.rolling(period).mean()
+
+def vwap(df):
+    tp = (df["high"] + df["low"] + df["close"]) / 3
+    return (tp * df["volume"]).cumsum() / df["volume"].cumsum()
+
+
+def volume_spike(df, period=20, multiplier=2):
+    avg = df["volume"].rolling(period).mean()
+    return df["volume"] > (avg * multiplier)
+
+
+def adx(df, period=14):
+    plus_dm = df["high"].diff()
+    minus_dm = -df["low"].diff()
+
+    plus_dm = plus_dm.where((plus_dm > minus_dm) & (plus_dm > 0), 0)
+    minus_dm = minus_dm.where((minus_dm > plus_dm) & (minus_dm > 0), 0)
+
+    tr = pd.concat([
+        df["high"] - df["low"],
+        abs(df["high"] - df["close"].shift()),
+        abs(df["low"] - df["close"].shift())
+    ], axis=1).max(axis=1)
+
+    atr = tr.rolling(period).mean()
+
+    plus_di = 100 * (plus_dm.rolling(period).mean() / atr)
+    minus_di = 100 * (minus_dm.rolling(period).mean() / atr)
+
+    dx = ((plus_di - minus_di).abs() / (plus_di + minus_di)) * 100
+
+    return dx.rolling(period).mean()
+
+
+def trend_strength(df):
+    e9 = ema(df, 9)
+    e21 = ema(df, 21)
+
+    if e9.iloc[-1] > e21.iloc[-1]:
+        return "BULLISH"
+
+    elif e9.iloc[-1] < e21.iloc[-1]:
+        return "BEARISH"
+
+    return "SIDEWAYS"
