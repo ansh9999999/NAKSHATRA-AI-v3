@@ -48,7 +48,6 @@ def generate_signal(df):
     if macd_line.iloc[-1] > signal_line.iloc[-1]:
         score += 15
         reasons.append("MACD Bullish")
-
     else:
         score -= 15
         reasons.append("MACD Bearish")
@@ -66,7 +65,6 @@ def generate_signal(df):
 
     # ATR
     atr14 = atr(df).iloc[-1]
-
     atr_avg = atr(df).tail(20).mean()
 
     if atr14 > atr_avg:
@@ -99,14 +97,27 @@ def generate_signal(df):
         reasons.append("Support Breakdown")
 
     # Final Signal
-    if score >= 60:
+    if score >= 40:
         signal = "BIG BUY"
 
-    elif score <= -60:
+    elif score <= -40:
         signal = "BIG SELL"
 
     else:
         signal = "WAIT"
+
+    # Debug Output
+    print("=" * 60)
+    print(f"PRICE      : {price}")
+    print(f"EMA9       : {ema9}")
+    print(f"EMA21      : {ema21}")
+    print(f"RSI        : {rsi14}")
+    print(f"ADX        : {adx14}")
+    print(f"ATR        : {atr14}")
+    print(f"SCORE      : {score}")
+    print(f"REASONS    : {reasons}")
+    print(f"SIGNAL     : {signal}")
+    print("=" * 60)
 
     confidence = min(abs(score), 100)
 
@@ -122,4 +133,4 @@ def generate_signal(df):
         "adx": round(float(adx14), 2),
         "atr": round(float(atr14), 2),
         "reasons": reasons,
-    }
+        }
