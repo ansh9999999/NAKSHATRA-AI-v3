@@ -2,6 +2,7 @@ import requests
 
 TOPIC = "nakshatra-ai-v3"
 
+
 def send_notification(title, message):
 
     url = f"https://ntfy.sh/{TOPIC}"
@@ -9,20 +10,22 @@ def send_notification(title, message):
     headers = {
         "Title": title,
         "Priority": "5",
-        "Tags": "chart_with_upwards_trend,money_bag"
+        "Tags": "money_bag,chart_with_upwards_trend"
     }
 
-    requests.post(
-        url,
-        data=message.encode("utf-8"),
-        headers=headers,
-        timeout=10
-    )
+    try:
+        r = requests.post(
+            url,
+            data=message.encode("utf-8"),
+            headers=headers,
+            timeout=15
+        )
 
+        print("NTFY STATUS :", r.status_code)
+        print("NTFY RESPONSE :", r.text)
 
-if __name__ == "__main__":
+        return r.status_code == 200
 
-    send_notification(
-        "🚀 NAKSHATRA AI",
-        "Congratulations!\n\nYour ntfy notification is working."
-    )
+    except Exception as e:
+        print("NTFY ERROR :", e)
+        return False
