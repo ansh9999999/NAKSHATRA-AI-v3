@@ -36,9 +36,3 @@ def health():
     return {
         "status": "OK"
     }
-    from notify import send_notification
-
-send_notification(
-    "🚀 NAKSHATRA AI TEST",
-    "Render deployment successful.\n\nNotifications are working."
-)
