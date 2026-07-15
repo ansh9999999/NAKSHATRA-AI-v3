@@ -71,13 +71,15 @@ Reasons
         ok = send_message(message)
         if ok:
             print(f"✅ Telegram Alert Sent : {symbol}")
+        else:
+            print(f"❌ Telegram Failed : {symbol}")
     except Exception as e:
         print("Telegram Error:", e)
 
-    # ntfy Phone Notification
+    # ntfy
     try:
         send_notification(
-            f"{emoji} {symbol} {signal}",
+            f"{symbol} {signal}",   # <-- emoji hata diya
             message
         )
         print(f"✅ ntfy Notification Sent : {symbol}")
