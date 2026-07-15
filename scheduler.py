@@ -3,6 +3,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from history import get_history
 from analysis.signal import generate_signal
 from telegram import send_message
+from notify import send_notification
 
 SYMBOLS = [
     "BTCUSD",
@@ -24,8 +25,6 @@ def scan_symbol(symbol):
         print(f"❌ {symbol} : No Data")
         return
 
-    print(df.tail())
-
     result = generate_signal(df)
 
     signal = result["signal"]
@@ -44,8 +43,7 @@ def scan_symbol(symbol):
 
     emoji = "🟢" if signal == "BIG BUY" else "🔴"
 
-    message = f"""
-🚨 NAKSHATRA AI v3
+    message = f"""🚨 NAKSHATRA AI v3
 
 {emoji} {signal}
 
@@ -68,12 +66,23 @@ Reasons
 {chr(10).join('✅ ' + r for r in result['reasons'])}
 """
 
-    ok = send_message(message)
+    # Telegram
+    try:
+        ok = send_message(message)
+        if ok:
+            print(f"✅ Telegram Alert Sent : {symbol}")
+    except Exception as e:
+        print("Telegram Error:", e)
 
-    if ok:
-        print(f"✅ {symbol} Alert Sent")
-    else:
-        print(f"❌ Telegram Failed")
+    # ntfy Phone Notification
+    try:
+        send_notification(
+            f"{emoji} {symbol} {signal}",
+            message
+        )
+        print(f"✅ ntfy Notification Sent : {symbol}")
+    except Exception as e:
+        print("ntfy Error:", e)
 
 
 def market_scan():
